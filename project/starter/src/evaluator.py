@@ -24,6 +24,14 @@ class IRMetrics:
                 continue
             
             # YOUR CODE HERE: Calculate recall for this query
+            # Documents considered relevant are those with # a relevance score greater than zero. 
+            relevant_docs = { doc_id for doc_id, relevance in qrels[q_id].items() if relevance > 0 } 
+            if not relevant_docs: 
+                continue 
+            retrieved_docs = set(results[q_id][:k]) 
+            # Recall = relevant retrieved / total relevant 
+            recall = len(retrieved_docs & relevant_docs) / len(relevant_docs) 
+            recall_scores.append(recall)
             
         return np.mean(recall_scores) if recall_scores else 0.0
 
@@ -37,7 +45,19 @@ class IRMetrics:
             if q_id not in qrels:
                 continue
             
-            # YOUR CODE HERE: Calculate precision for this query
+            retrieved_docs = results[q_id][:k]
+
+            if not retrieved_docs:
+                precision_scores.append(0.0)
+                continue
+
+            relevant_docs = { doc_id for doc_id, relevance in qrels[q_id].items() if relevance > 0 }
+
+            relevant_retrieved = sum( 1 for doc_id in retrieved_docs if doc_id in relevant_docs )
+
+            precision = relevant_retrieved / k
+
+            precision_scores.append(precision)
 
             
         return np.mean(precision_scores) if precision_scores else 0.0
@@ -53,6 +73,17 @@ class IRMetrics:
                 continue
             
             # YOUR CODE HERE: Calculate MRR for this query
+
+            relevant_docs = { doc_id for doc_id, relevance in qrels[q_id].items() if relevance > 0 }
+
+            reciprocal_rank = 0.0
+
+            for rank, doc_id in enumerate(results[q_id], start=1): 
+                if doc_id in relevant_docs: 
+                    reciprocal_rank = 1.0 / rank 
+                    break
+
+            reciprocal_ranks.append(reciprocal_rank)
 
             
         return np.mean(reciprocal_ranks) if reciprocal_ranks else 0.0
